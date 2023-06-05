@@ -44,3 +44,5 @@ pip install laspy numpy scikit-learn pandas matplotlib
 - O código está em constante desenvolvimento e melhorias podem ser feitas para aumentar a precisão da segmentação e fornecer mais recursos e opções de personalização.
 
 - Sinta-se à vontade para contribuir, relatar problemas ou sugerir melhorias por meio das issues e pull requests do GitHub.
+
+Esse código foi gerado com auxílio do ChatGPT.
