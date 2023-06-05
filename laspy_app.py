@@ -3,9 +3,9 @@ import numpy as np
 from scipy.spatial import KDTree
 from sklearn.cluster import KMeans
 import pandas as pd
+import matplotlib.pyplot as plt
 
-"""Função para rotular as classes"""
-
+    # Código de rotulação de classes
 def rotular_classe(valor):
     if valor == 0:
         return "Zero length line"
@@ -79,7 +79,7 @@ def rotular_classe(valor):
         return "Low point"
     else:
         return "Classe não identificada"
-
+  
 file_path = input("Digite o caminho do arquivo LAS/LAZ: ")
 infile = laspy.read(file_path)
 
@@ -109,27 +109,22 @@ for tree_id in tree_ids:
 for tree_id, tree_height in tree_heights:
     print(f"ID: {tree_id}, Altura: {tree_height}")
 
-import matplotlib.pyplot as plt
-
 # Plotando as árvores segmentadas
+fig, ax = plt.subplots()
 for i in range(num_trees):
     tree_points = filtered_points[tree_labels == i]
     x = tree_points[:, 0]  # Coordenada x dos pontos
     y = tree_points[:, 1]  # Coordenada y dos pontos
-    plt.scatter(x, y)
+    ax.scatter(x, y)
 
-plt.xlabel("Coordenada x")
-plt.ylabel("Coordenada y")
-plt.title("Árvores Segmentadas")
+ax.set_xlabel("Coordenada x")
+ax.set_ylabel("Coordenada y")
+ax.set_title("Árvores Segmentadas")
 plt.show()
-
-x = filtered_points[:, 0]  # Coordenada x dos pontos
-y = filtered_points[:, 1]  # Coordenada y dos pontos
-z = filtered_points[:, 2]  # Coordenada z dos pontos
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.scatter(x, y, z)
+ax.scatter(filtered_points[:, 0], filtered_points[:, 1], filtered_points[:, 2])
 ax.set_xlabel('Coordenada X')
 ax.set_ylabel('Coordenada Y')
 ax.set_zlabel('Coordenada Z')
@@ -138,7 +133,8 @@ plt.show()
 
 data = {'Tree ID': [], 'Height': [], 'Class': []}
 for tree_id, tree_height in tree_heights:
-    class_value = infile.classification[tree_labels == tree_id][0]
+    tree_points = filtered_points[tree_labels == tree_id]
+    class_value = np.unique(infile.classification[tree_labels == tree_id])[0]
     class_label = rotular_classe(class_value)
     data['Tree ID'].append(tree_id)
     data['Height'].append(tree_height)
@@ -148,3 +144,20 @@ df = pd.DataFrame(data)
 output_file = input("Digite o caminho e nome do arquivo XLS de saída: ")
 df.to_excel(output_file, index=False)
 print("Arquivo XLS salvo com sucesso!")
+
+# Exportar arquivo LAS segmentado das árvores
+outfile_path = input("Digite o caminho e nome do arquivo LAS segmentado de saída: ")
+outfile = laspy.file.File(outfile_path, mode="w", header=infile.header)
+outfile.points = laspy.util.PointFormat().pack(
+    x=filtered_points[:, 0],
+    y=filtered_points[:, 1],
+    z=filtered_points[:, 2],
+    intensity=infile.intensity[tree_labels == tree_id],
+    classification=infile.classification[tree_labels == tree_id],
+    scan_angle_rank=infile.scan_angle_rank[tree_labels == tree_id],
+    user_data=infile.user_data[tree_labels == tree_id],
+    pt_src_id=infile.pt_src_id[tree_labels == tree_id]
+)
+outfile.close()
+
+print("Arquivo LAS segmentado das árvores exportado com sucesso!")
