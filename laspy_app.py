@@ -80,41 +80,36 @@ def rotular_classe(valor):
     else:
         return "Classe não identificada"
 
-"""Abrir e ler o arquivo LAS/LAZ:"""
-
 file_path = input("Digite o caminho do arquivo LAS/LAZ: ")
 infile = laspy.read(file_path)
-infile
 
 points = np.vstack((infile.x, infile.y, infile.z)).transpose()
 
-"""Filtrar as classes de vegetação e interferência da vegetação e aplicar a clusterização:"""
-
-vegetation_classes = [2, 3, 4, 23, 24, 25]  # Classes de vegetação e interferência da vegetação
+vegetation_classes = [2, 3, 4, 23, 24, 25]
 
 filtered_points = points[np.isin(infile.classification, vegetation_classes)]
 filtered_coordinates = filtered_points[:, :3]
 
 num_trees = int(input("Digite o número estimado de árvores: "))
-kmeans = KMeans(n_clusters=num_trees, n_init=10, random_state=0).fit(filtered_coordinates)
+kmeans = KMeans(n_clusters=num_trees, random_state=0).fit(filtered_coordinates)
 tree_labels = kmeans.labels_
 
 min_z = np.min(filtered_points[:, 2])
 heights = filtered_points[:, 2] - min_z
 
-tree_ids = np.arange(1, num_trees + 1)
+tree_ids = np.unique(tree_labels)
 tree_heights = []
 for tree_id in tree_ids:
-    tree_height = np.max(heights[filtered_points[:, 0] == tree_id])
-    tree_heights.append((tree_id, tree_height))
+    tree_points_tree_id = tree_labels == tree_id
+    if np.any(tree_points_tree_id):
+        tree_height = np.max(heights[tree_points_tree_id])
+        tree_heights.append((tree_id, tree_height))
 
 # Imprimir informações
-for tree_labels, tree_height in tree_heights:
-    print(f"ID: {tree_labels}, Altura: {tree_height}")
+for tree_id, tree_height in tree_heights:
+    print(f"ID: {tree_id}, Altura: {tree_height}")
 
 import matplotlib.pyplot as plt
-
-# Supondo que você tenha as coordenadas x, y e as labels das árvores segmentadas
 
 # Plotando as árvores segmentadas
 for i in range(num_trees):
@@ -141,10 +136,9 @@ ax.set_zlabel('Coordenada Z')
 plt.title('Árvores Segmentadas')
 plt.show()
 
-# Salvando as informações em uma tabela XLS
 data = {'Tree ID': [], 'Height': [], 'Class': []}
 for tree_id, tree_height in tree_heights:
-    class_value = infile.classification[filtered_points[:, 0] == tree_id][0]
+    class_value = infile.classification[tree_labels == tree_id][0]
     class_label = rotular_classe(class_value)
     data['Tree ID'].append(tree_id)
     data['Height'].append(tree_height)
