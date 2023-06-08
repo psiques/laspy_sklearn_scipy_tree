@@ -39,7 +39,7 @@ data = {'Tree ID': [], 'Height': [], 'Class': []}
 for tree_id, tree_height in tree_heights:
     tree_points = filtered_points[tree_labels == tree_id]
     class_value = np.unique(infile.classification[tree_labels == tree_id])[0]
-    class_label = rotular_classe(class_value)
+    class_label = rotular_classe(int(class_value))
     data['Tree ID'].append(tree_id)
     data['Height'].append(tree_height)
     data['Class'].append(class_label)
@@ -78,4 +78,14 @@ outfile_path = input("Digite o caminho e nome do arquivo LAS segmentado de saíd
 outfile = laspy.file.File(outfile_path, mode="w", header=infile.header)
 outfile.points = laspy.util.PointFormat().pack(
     x=filtered_points[:, 0],
-    y=filtered_points
+    y=filtered_points[:, 1],
+    z=filtered_points[:, 2],
+    intensity=infile.intensity[tree_labels == tree_id],
+    classification=infile.classification[tree_labels == tree_id],
+    scan_angle_rank=infile.scan_angle_rank[tree_labels == tree_id],
+    user_data=infile.user_data[tree_labels == tree_id],
+    pt_src_id=infile.pt_src_id[tree_labels == tree_id]
+)
+outfile.close()
+
+print("Arquivo LAS segmentado das árvores exportado com sucesso!")
